@@ -90,11 +90,8 @@ class ADBSnapper(Snapper):
         super().__init__()
 
     def screen(self):
-        try:
-            os.system("adb exec-out screencap -p > " + self._imgpath + self._imgname)
-        except Exception as e:
-                print(bcolors.FAIL + "\nUnknown input" + bcolors.ENDC)
-                print(e)
+        return os.system("adb exec-out screencap -p > " + self._imgpath + self._imgname)
+        
 
 class EmulatorSnapper(Snapper):
     def __init__(self):
@@ -105,4 +102,5 @@ class EmulatorSnapper(Snapper):
         box_hp = tuple(map(operator.add, (x_pad,y_pad,x_pad,y_pad), self.__crds.homepage))
         im  = PIL.ImageGrab.grab(box_hp)
         im.save(os.getcwd() + '\\' + self._imgpath + self._imgname, 'PNG')
+        return 1
 

@@ -168,8 +168,6 @@ def simplify_ques_fy(question):
 
     return ParsedQuestion(question, senses, simplfy_ques), neg
     
-   
-
 # get web page
 def get_page(link):
     try:

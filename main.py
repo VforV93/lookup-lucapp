@@ -1,7 +1,7 @@
 from answer_bot import solve_quiz, bcolors
 import os
-import modules.mydecorators as mydecorators
 import modules.emulator as em
+import modules.mydecorators as mydecorators
 import win32.win32api as win32
 import time
 
@@ -9,13 +9,13 @@ import time
 @mydecorators.timeit("main")
 def main(snapper: em.Snapper):
     try:
-        snapper.screen()
+        if snapper.screen() >= 0:
+            solve_quiz(snapper)
+            snapper.store()
+        else:
+            print(bcolors.FAIL + "Snapper.screen error during the screen acquisition" + bcolors.ENDC)
     except Exception as e:
-                print(bcolors.FAIL + "\nSnapper.screen error during the screen acquisition" + bcolors.ENDC)
-                print(e)
-    snapper.screen()
-    solve_quiz(snapper)
-    snapper.store()
+        print(e) 
 
 
 if __name__ == '__main__':
