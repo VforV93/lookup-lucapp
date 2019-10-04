@@ -40,7 +40,7 @@ class Snapper(object):
         self._imgname  = "screen.png"
 
     """
-        take the current Screen imgs and move them to Screens/Backup/<day>/quest#
+        take the current Screen imgs and move them to Screens/Backup/<day>/quest# - autoincrement
     """
     def store(self, startpath = None):
         today      = date.today()
@@ -85,6 +85,17 @@ class Snapper(object):
     def screenpath(self):
         return self._imgpath + self._imgname
 
+class ADBSnapper(Snapper):
+    def __init__(self):
+        super().__init__()
+
+    def screen(self):
+        try:
+            os.system("adb exec-out screencap -p > " + self._imgpath + self._imgname)
+        except Exception as e:
+                print(bcolors.FAIL + "\nUnknown input" + bcolors.ENDC)
+                print(e)
+
 class EmulatorSnapper(Snapper):
     def __init__(self):
         super().__init__()
@@ -95,9 +106,3 @@ class EmulatorSnapper(Snapper):
         im  = PIL.ImageGrab.grab(box_hp)
         im.save(os.getcwd() + '\\' + self._imgpath + self._imgname, 'PNG')
 
-class ADBSnapper(Snapper):
-    def __init__(self):
-        pass
-
-    def screen(self):
-        os.system("adb exec-out screencap -p > " + self._imgpath + self._imgname)

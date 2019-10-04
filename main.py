@@ -8,29 +8,35 @@ import time
 
 @mydecorators.timeit("main")
 def main(snapper: em.Snapper):
+    try:
+        snapper.screen()
+    except Exception as e:
+                print(bcolors.FAIL + "\nSnapper.screen error during the screen acquisition" + bcolors.ENDC)
+                print(e)
+    snapper.screen()
     solve_quiz(snapper)
     snapper.store()
 
 
 if __name__ == '__main__':
     os.system("adb devices")
-    keypressed = input(bcolors.WARNING + '\nPress 1 to use ADB(Phone connected) or 2 with emulator or q to quit:\n' + bcolors.ENDC)
-    if keypressed != 'q':
+    keypressed = ''
+    while keypressed != 'q':
+        keypressed = input(bcolors.WARNING + '\nPress 1 to use ADB(Phone/Emulator connected) or 2 to PCScreen capture or q to quit:\n' + bcolors.ENDC)
         try:
             snapper = em.getSnapperFactory(keypressed)
+            while True:
+                keypressed = input(bcolors.WARNING + '\nPress s to screenshot live game or q to quit:\n' + bcolors.ENDC)
+                if keypressed == 'c':
+                    em.get_cords()
+                elif keypressed == 's':
+                    main(snapper)
+                elif keypressed == 'q':
+                    break
+                else:
+                    print(bcolors.FAIL + "\nUnknown input" + bcolors.ENDC)
+
         except Exception as e:
-            print(bcolors.FAIL + "\nUnknown input" + bcolors.ENDC)
-            print(e)
-            
-        while True:
-            keypressed = input(bcolors.WARNING + '\nPress s to screenshot live game or q to quit:\n' + bcolors.ENDC)
-            if keypressed == 'c':
-                em.get_cords()
-            elif keypressed == 's':
-                snapper.store()
-                #snapper.screen()
-                #main(snapper)
-            elif keypressed == 'q':
-                break
-            else:
-                print(bcolors.FAIL + "\nUnknown input" + bcolors.ENDC)
+                    print(bcolors.FAIL + "\nUnknown input" + bcolors.ENDC)
+                    print(e)
+        
