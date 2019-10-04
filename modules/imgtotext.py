@@ -35,7 +35,7 @@ def get_question(path):
     # show_img("question", cropped_img)
     cv2.imwrite("Screens/question.png", cropped_img)
 
-    question = apply_pytesseract("Screens/question.png")
+    question = apply_pytesseract(cropped_img)
     question = question.splitlines()
     linenumber = len(question)
     print("lines in the question: " + str(linenumber))
@@ -53,29 +53,29 @@ def get_option(path, lineno, index):
     # this values derives from empirical tries
     # they refer to the end position of the question that depends on the lineno
     # for istance if the question has 2 lines, the options will start at crop_cropconfig[2-1]
-    crop_config = [41 / 100, 45 / 100, 46 / 100]
-    end_q = crop_config[lineno - 1] + (index - 1)*11/100
+    crop_config = [43 / 100, 46 / 100, 48 / 100]
+    end_q = crop_config[lineno - 1] + (index - 1)*8/100
 
     image = cv2.imread(path)
     height, width = image.shape[:2]
 
-    start_row, start_col = int(height * end_q), int(0)
-    # they height of an option box is 11/100 of the entire image height (more or less).
-    end_row, end_col = int(height * (end_q + 11 / 100)), int(width)
+    start_row, start_col = int(height * end_q), int(width * 0.05)
+    # they height of an option box is 5/100 of the entire image height (more or less).
+    end_row, end_col = int(height * (end_q + 6 / 100)), int(width - (width * 0.05))
 
     cropped_img = image[start_row:end_row, start_col:end_col]
     # show_img("option" + index, cropped_img)
     imgpath = "Screens/answer" + str(index) + ".png"
     cv2.imwrite(imgpath, cropped_img)
 
-    return imgpath
+    return cropped_img
 
 
-def apply_pytesseract(input_image):
+def apply_pytesseract(image):
     """Convert the image to black and white and apply pytesseract to get the text"""
 
     # load the image
-    image = cv2.imread(input_image)
+    #image = cv2.imread(input_image)
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
     kernel = np.ones((1, 1), np.uint8)

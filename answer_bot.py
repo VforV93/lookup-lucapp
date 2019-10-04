@@ -25,20 +25,23 @@ def get_and_search_option(i, screenpath, question, lineno, negative_question, re
     """Taking the screenshot and the parsed question this function read one option and search it.
 
      This function will be called in parallel so that the option detection and the searching is faster."""
-    optionpath = get_option(screenpath, lineno, i)
-    option = apply_pytesseract(optionpath)
+    optionimg = get_option(screenpath, lineno, i)
+    option = apply_pytesseract(optionimg)
 
-    points = google_wiki(question, option, negative_question)
+    if option == '':
+        points = 0
+    else:
+        points = google_wiki(question, option, negative_question)
 
     return_dict[option] = points
 
 
 @mydecorators.handle_exceptions
-def solve_quiz(screenpath):
+def solve_quiz(snapper):
     """Given a path to a valid screenshot it tries to solve the quiz in parallel."""
-    question, lineno = get_question(screenpath)
-    # simpler_question is an object of type ParsedQuestion
-    simpler_question, negative_question = simplify_ques(question)
+    question, lineno = get_question(snapper.screenpath())
+    #simpler_question is an object of type ParsedQuestion
+    simpler_question, negative_question = simplify_ques_fy(question)
 
     # if the answer is negative the results are resversed we check for that one with less matches
     points_coeff = 1
@@ -51,10 +54,10 @@ def solve_quiz(screenpath):
     tasks = []
     for i in [1, 2, 3]:
         # searching in parallel
-        proc = Process(target=get_and_search_option, args=(i, screenpath, simpler_question, lineno,
-                                                           negative_question, return_dict))
+        proc = Process(target=get_and_search_option, args=(i, snapper.screenpath(), simpler_question, lineno, negative_question, return_dict))
         proc.start()
         tasks.append(proc)
+        #get_and_search_option(i, snapper.screenpath(), simpler_question, lineno, negative_question, return_dict)
 
     for t in tasks:
         t.join()
@@ -74,3 +77,47 @@ def solve_quiz(screenpath):
 
     print("---------------------------------------")
     return return_option
+
+# Debugging
+if __name__ == '__main__':
+    #question, lineno = "In quale di queste serie TV ha recitato Will Smith", 3
+    #option = ["The Crown","Lost","Willy, il principe di Bel-Air"]
+    question, lineno = "Indica il film in cui il protagonista appare con uno stuzzicadenti!", 3
+    option = ["Scusa ma ti chiamo amore","Quo vado?","Johnny Stecchino"]
+    #question, lineno = "Dove ha avuto origine la cerimonia del tè", 3
+    #option = ["Islanda","Nuova Zelanda","Cina"]
+    #question, lineno = "Indica un motore di ricerca di letteratura accademica", 3
+    #option = ["Blackboard","Google Scholar","Google Classroom"]
+    #question, lineno = "Qual è la corsa ciclistica più lunga tra queste", 3
+    #option = ["Tour de France","Cape Town Cycle Tour","Giro d'Italia"]
+
+    simpler_question, negative_question = simplify_ques_fy(question)
+    #simpler_question, negative_question = simplify_ques(question)
+    print(simpler_question)
+
+    points_coeff = 1
+    if negative_question:
+        points_coeff = -1
+
+    manager = Manager()
+    return_dict = manager.dict()
+
+    tasks = []
+    for i in [0, 1, 2]:
+        if option == '':
+            points = 0
+        else:
+            points = google_wiki(simpler_question, option[i], negative_question)
+
+        return_dict[option[i]] = points
+
+    pointss = return_dict.values()
+    max_point = max(pointss)
+    print("\n" + question + "\n")
+    return_option = ""
+    for point, option in zip(pointss, return_dict.keys()):
+        if max_point == point:
+            return_option = option
+
+        print(option + " { points: " + str(point*points_coeff) + " }\n")
+    print("---------------------------------------")
