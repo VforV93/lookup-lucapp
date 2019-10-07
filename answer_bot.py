@@ -8,6 +8,8 @@ from multiprocessing import Process, Manager
 from modules.imgtotext import *
 from modules.gsearch import *
 from threading import Thread
+import modules.emulator as em
+from operator import itemgetter
 
 # for terminal colors 
 class bcolors:
@@ -33,7 +35,8 @@ def get_and_search_option(i, screenpath, question, lineno, negative_question, re
     else:
         points = google_wiki(question, option, negative_question)
 
-    return_dict[option] = points
+    print("{}-{}-{}".format(option,i,points))
+    return_dict[option] = (option,i,points)
 
 
 @mydecorators.handle_exceptions
@@ -62,37 +65,42 @@ def solve_quiz(snapper):
     for t in tasks:
         t.join()
 
-    points = return_dict.values()
+    ris_vals = sorted(return_dict.values(),key=itemgetter(1))
+    points = [ris_vals[0][2]*points_coeff,ris_vals[1][2]*points_coeff,ris_vals[2][2]*points_coeff]
+
     # taking the max match value
     max_point = max(points)
     print("\n" + bcolors.UNDERLINE + question + bcolors.ENDC + "\n")
     return_option = ""
-    for point, option in zip(points, return_dict.keys()):
-        if max_point == point:
-            return_option = option
+    for r_opt,r_i,r_p in ris_vals:
+    #for point, option in zip(points, return_dict.keys()):
+        if max_point == r_p:
+            return_option = r_opt
             # if this is the "correct" answer it will appear green
-            option = bcolors.OKGREEN + option + bcolors.ENDC
+            r_opt = bcolors.OKGREEN + r_opt + bcolors.ENDC
 
-        print(option + " { points: " + bcolors.BOLD + str(point*points_coeff) + bcolors.ENDC + " }\n")
+        print(r_opt + " { points: " + bcolors.BOLD + str(r_p) + bcolors.ENDC + " }\n")
 
     print("---------------------------------------")
     return return_option
 
 # Debugging
 if __name__ == '__main__':
-    #question, lineno = "In quale di queste serie TV ha recitato Will Smith", 3
+    #question, lineno = "In quale di queste serie TV NON ha recitato Will Smith", 3
     #option = ["The Crown","Lost","Willy, il principe di Bel-Air"]
-    question, lineno = "Indica il film in cui il protagonista appare con uno stuzzicadenti!", 3
-    option = ["Scusa ma ti chiamo amore","Quo vado?","Johnny Stecchino"]
+    #question, lineno = "Indica il film in cui il protagonista appare con uno stuzzicadenti", 3
+    #option = ["Scusa ma ti chiamo amore","Quo vado?","Johnny Stecchino"]
     #question, lineno = "Dove ha avuto origine la cerimonia del tè", 3
     #option = ["Islanda","Nuova Zelanda","Cina"]
     #question, lineno = "Indica un motore di ricerca di letteratura accademica", 3
     #option = ["Blackboard","Google Scholar","Google Classroom"]
     #question, lineno = "Qual è la corsa ciclistica più lunga tra queste", 3
     #option = ["Tour de France","Cape Town Cycle Tour","Giro d'Italia"]
-
+    snapper = em.getSnapperFactory('1')
+    question, lineno = get_question(snapper.screenpath())
     simpler_question, negative_question = simplify_ques_fy(question)
     #simpler_question, negative_question = simplify_ques(question)
+    option = ["United Internet","Burmeister & Wain","Mannesmann"]
     print(simpler_question)
 
     points_coeff = 1
@@ -109,15 +117,19 @@ if __name__ == '__main__':
         else:
             points = google_wiki(simpler_question, option[i], negative_question)
 
-        return_dict[option[i]] = points
+        return_dict[option[i]] = points * points_coeff
 
-    pointss = return_dict.values()
-    max_point = max(pointss)
-    print("\n" + question + "\n")
+    points = return_dict.values()
+    max_point = max(points)
+    print("\n" + bcolors.UNDERLINE + question + bcolors.ENDC + "\n")
     return_option = ""
-    for point, option in zip(pointss, return_dict.keys()):
-        if max_point == point:
-            return_option = option
+    #for point, option in zip(points, return_dict.keys()):
+    for opt in option:
+        if max_point == return_dict[opt]:
+            return_option = opt
+            # if this is the "correct" answer it will appear green
+            opt = bcolors.OKGREEN + opt + bcolors.ENDC
 
-        print(option + " { points: " + str(point*points_coeff) + " }\n")
+        print(option + " { points: " + bcolors.BOLD + str(return_dict[opt]) + bcolors.ENDC + " }\n")
+
     print("---------------------------------------")

@@ -29,7 +29,7 @@ def get_question(path):
     # Let's get the starting pixel coordiantes (top left of cropped top)
     start_row, start_col = int(height * 24 / 100), int(0)
     # Let's get the ending pixel coordinates (bottom right of cropped top)
-    end_row, end_col = int(height * 43 / 100), int(width)
+    end_row, end_col = int(height * 42 / 100), int(width)
 
     cropped_img = image[start_row:end_row, start_col:end_col]
     # show_img("question", cropped_img)

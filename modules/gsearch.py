@@ -33,8 +33,9 @@ class ParsedQuestion:
         self.simplyfied = simplyfiedq
 
     def __str__(self):
-        string = '-'.join(self.proper_nouns) + '\n' + '-'.join(self.simplyfied)
-        return string
+        return "simplyfied:{}\nproper_nouns:{}".format(self.simplyfied, self.proper_nouns)
+        #string = '-'.join(self.proper_nouns) + '\n' + '-'.join(self.simplyfied)
+        #return string
 
 
 def simplify_ques(question):
@@ -62,7 +63,11 @@ def simplify_ques(question):
 
     qwords = question.lower().split()
     # check if the question is a negative one
-    neg = True if [i for w in qwords if w in negative_words] else False
+    neg = False
+    for w in qwords:
+        if w in negative_words:
+            neg = True
+            break
 
     cleanwords = [word for word in qwords if word not in remove_words]
 
@@ -114,9 +119,14 @@ def simplify_ques_fy(question):
 
     qwords = question.lower().split()
     # check if the question is a negative one
-    neg = True if [i for w in qwords if w in negative_words] else False
+    neg = False
+    for w in qwords:
+        if w in negative_words:
+            neg = True
+            break
 
     data = babelfyAPI(params)
+    question = question.strip('?')
     splitted_question = question.split()
     simplfy_ques = []
     for result in data:
@@ -124,8 +134,8 @@ def simplify_ques_fy(question):
             if token not in simplfy_ques:
                 simplfy_ques.append(token)
 
-    squestion = " ".join(simplfy_ques)
-    params['text'] = squestion
+    #squestion = " ".join(simplfy_ques)
+    #params['text'] = squestion
     params['match'] = 'PARTIAL_MATCHING'
     data = babelfyAPI(params)
 
@@ -134,6 +144,14 @@ def simplify_ques_fy(question):
     simply_rank_list = []
     check_synset     = []
     senses           = []
+
+    for i, _ in enumerate(splitted_question):
+        # if two subsequent words has the first letter uppercased they probably refers to a proper noun
+        try:
+            if splitted_question[i][0].isupper() and splitted_question[i + 1][0].isupper():
+                senses.append(splitted_question[i] + " " + splitted_question[i + 1])
+        except IndexError:
+            pass
 
     for result in data:
         result['score'] += result['coherenceScore']
@@ -153,7 +171,9 @@ def simplify_ques_fy(question):
         if best['babelSynsetID'] not in simply_rank_dict:
             simply_rank_dict[best['babelSynsetID']] = best
             check_synset.append(best['babelSynsetID'])
-            #senses.append(" ".join(simplfy_ques[best['tokenFragment']['start']:best['tokenFragment']['end']+1]))
+            els = " ".join(splitted_question[best['tokenFragment']['start']:best['tokenFragment']['end']+1])
+            if els not in senses:
+                senses.append(els)
 
     for bid in check_synset:
         if bid[-1] == 'n':
@@ -224,18 +244,21 @@ def google_wiki(sim_ques, option, neg):
     
     # TODO force google to search for the exact match ??? using quotes
     searched_option = option.lower()
-
+    
+    search_w = None
     search_wiki = search(searched_option)
+    #print("searched: {}".format(searched_option))
+    #print(search_wiki)
     for sw in search_wiki:
         if sw.link:
-            search_wiki = sw
+            search_w = sw
             break
-    
-    if not search_wiki:
+
+    if not search_w:
         # maxint was removed
         # not so clear
-        return -sys.maxsize if neg else sys.maxsize
+        return -sys.maxsize if not neg else sys.maxsize
 
-    points = get_score(search_wiki.link, words, sim_ques)
+    points = get_score(search_w.link, words, sim_ques)
 
     return points if not neg else -points

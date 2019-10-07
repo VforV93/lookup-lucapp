@@ -39,4 +39,3 @@ if __name__ == '__main__':
         except Exception as e:
                     print(bcolors.FAIL + "\nUnknown input" + bcolors.ENDC)
                     print(e)
-        
