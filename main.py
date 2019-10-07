@@ -11,7 +11,7 @@ def main(snapper: em.Snapper):
     try:
         if snapper.screen() >= 0:
             solve_quiz(snapper)
-            snapper.store()
+            #snapper.store()
         else:
             print(bcolors.FAIL + "Snapper.screen error during the screen acquisition" + bcolors.ENDC)
     except Exception as e:

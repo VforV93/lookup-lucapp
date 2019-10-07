@@ -27,9 +27,9 @@ def get_question(path):
 
     # The problem of this huge portion of code is that the question hasn't always the same lenght
     # Let's get the starting pixel coordiantes (top left of cropped top)
-    start_row, start_col = int(height * 24 / 100), int(0)
+    start_row, start_col = int(height * 22 / 100), int(0)
     # Let's get the ending pixel coordinates (bottom right of cropped top)
-    end_row, end_col = int(height * 42 / 100), int(width)
+    end_row, end_col = int(height * 38 / 100), int(width)
 
     cropped_img = image[start_row:end_row, start_col:end_col]
     # show_img("question", cropped_img)
@@ -53,18 +53,18 @@ def get_option(path, lineno, index):
     # this values derives from empirical tries
     # they refer to the end position of the question that depends on the lineno
     # for istance if the question has 2 lines, the options will start at crop_cropconfig[2-1]
-    crop_config = [43 / 100, 46 / 100, 48 / 100]
-    end_q = crop_config[lineno - 1] + (index - 1)*8/100
+    crop_config = [42 / 100, 44 / 100, 46 / 100]
+    end_q = crop_config[lineno - 1] + (index - 1)*9/100
 
     image = cv2.imread(path)
     height, width = image.shape[:2]
 
     start_row, start_col = int(height * end_q), int(width * 0.05)
     # they height of an option box is 5/100 of the entire image height (more or less).
-    end_row, end_col = int(height * (end_q + 6 / 100)), int(width - (width * 0.05))
+    end_row, end_col = int(height * (end_q + 4 / 100)), int(width - (width * 0.05))
 
     cropped_img = image[start_row:end_row, start_col:end_col]
-    # show_img("option" + index, cropped_img)
+    #show_img("option" + index, cropped_img)
     imgpath = "Screens/answer" + str(index) + ".png"
     cv2.imwrite(imgpath, cropped_img)
 

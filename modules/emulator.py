@@ -90,8 +90,8 @@ class ADBSnapper(Snapper):
         super().__init__()
 
     def screen(self):
-        #return 1
-        return os.system("adb exec-out screencap -p > " + self._imgpath + self._imgname)
+        return 1
+        #return os.system("adb exec-out screencap -p > " + self._imgpath + self._imgname)
         
 
 class EmulatorSnapper(Snapper):

@@ -73,7 +73,6 @@ def solve_quiz(snapper):
     print("\n" + bcolors.UNDERLINE + question + bcolors.ENDC + "\n")
     return_option = ""
     for r_opt,r_i,r_p in ris_vals:
-    #for point, option in zip(points, return_dict.keys()):
         if max_point == r_p:
             return_option = r_opt
             # if this is the "correct" answer it will appear green
@@ -86,8 +85,8 @@ def solve_quiz(snapper):
 
 # Debugging
 if __name__ == '__main__':
-    #question, lineno = "In quale di queste serie TV NON ha recitato Will Smith", 3
-    #option = ["The Crown","Lost","Willy, il principe di Bel-Air"]
+    question, lineno = "In quale di queste serie TV ha recitato Will Smith:", 3
+    option = ["The Crown","Lost","Willy, il principe di Bel-Air"]
     #question, lineno = "Indica il film in cui il protagonista appare con uno stuzzicadenti", 3
     #option = ["Scusa ma ti chiamo amore","Quo vado?","Johnny Stecchino"]
     #question, lineno = "Dove ha avuto origine la cerimonia del tè", 3
@@ -97,10 +96,10 @@ if __name__ == '__main__':
     #question, lineno = "Qual è la corsa ciclistica più lunga tra queste", 3
     #option = ["Tour de France","Cape Town Cycle Tour","Giro d'Italia"]
     snapper = em.getSnapperFactory('1')
-    question, lineno = get_question(snapper.screenpath())
+    #question, lineno = get_question(snapper.screenpath())
     simpler_question, negative_question = simplify_ques_fy(question)
     #simpler_question, negative_question = simplify_ques(question)
-    option = ["United Internet","Burmeister & Wain","Mannesmann"]
+    #option = ["United Internet","Burmeister & Wain","Mannesmann"]
     print(simpler_question)
 
     points_coeff = 1

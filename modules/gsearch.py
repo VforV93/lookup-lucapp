@@ -19,11 +19,13 @@ import gzip
 import os
 
 # list of words to clean from the question during google search
-remove_words = json.loads(open("Data/settings.json").read())["remove_words"]
+remove_words   = json.loads(open("Data/settings.json").read())["remove_words"]
 
 # negative words
 negative_words = json.loads(open("Data/settings.json").read())["negative_words"]
 
+# negative words
+no_end_char    = r'[!@#$?:,;]'
 
 class ParsedQuestion:
     """Holding some elements extracted from the question"""
@@ -117,6 +119,20 @@ def simplify_ques_fy(question):
 	'key'  : os.environ['BABEL']
     }
 
+    data = babelfyAPI(params)
+    question = re.sub(no_end_char, '', question)
+    splitted_question = question.split()
+    simplfy_ques = []
+    for result in data:
+        for token in splitted_question[result['tokenFragment']['start']:result['tokenFragment']['end']+1]:
+            if token not in simplfy_ques and token not in remove_words:
+                simplfy_ques.append(token)
+
+    #squestion = " ".join(simplfy_ques)
+    #params['text'] = squestion
+    params['match'] = 'PARTIAL_MATCHING'
+    data = babelfyAPI(params)
+
     qwords = question.lower().split()
     # check if the question is a negative one
     neg = False
@@ -124,20 +140,10 @@ def simplify_ques_fy(question):
         if w in negative_words:
             neg = True
             break
-
-    data = babelfyAPI(params)
-    question = question.strip('?')
-    splitted_question = question.split()
-    simplfy_ques = []
-    for result in data:
-        for token in splitted_question[result['tokenFragment']['start']:result['tokenFragment']['end']+1]:
-            if token not in simplfy_ques:
-                simplfy_ques.append(token)
-
-    #squestion = " ".join(simplfy_ques)
-    #params['text'] = squestion
-    params['match'] = 'PARTIAL_MATCHING'
-    data = babelfyAPI(params)
+    
+    for w in negative_words:
+        if w in splitted_question:
+            splitted_question.remove(w)
 
     rank_dict        = {}
     simply_rank_dict = {}
@@ -172,7 +178,7 @@ def simplify_ques_fy(question):
             simply_rank_dict[best['babelSynsetID']] = best
             check_synset.append(best['babelSynsetID'])
             els = " ".join(splitted_question[best['tokenFragment']['start']:best['tokenFragment']['end']+1])
-            if els not in senses:
+            if els not in senses and els not in remove_words:
                 senses.append(els)
 
     for bid in check_synset:
@@ -183,7 +189,7 @@ def simplify_ques_fy(question):
                 'key'  : os.environ['BABEL']
             }
             ris = babelAPI(params)
-            if ris not in senses:
+            if ris not in senses and ris not in remove_words:
                 senses.append(ris)
 
     return ParsedQuestion(question, senses, simplfy_ques), neg
@@ -205,7 +211,12 @@ def get_page(link):
 def search(searched_option):
     # searched_option += ' wiki'
     # get google search results for option + 'wiki'
-    return google.search(searched_option, pages=1, lang="it")
+    try:
+        ret = google.search(searched_option, pages=1, lang="it")
+    except Exception as e:
+        print(e)        
+         
+    return ret
 
 
 def get_score(link, words, sim_ques):
