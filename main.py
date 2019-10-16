@@ -4,14 +4,14 @@ import modules.emulator as em
 import modules.mydecorators as mydecorators
 import win32.win32api as win32
 import time
-
+from serpapi.google_search_results import GoogleSearchResults
 
 @mydecorators.timeit("main")
 def main(snapper: em.Snapper):
     try:
         if snapper.screen() >= 0:
             solve_quiz(snapper)
-            #snapper.store()
+            snapper.store()
         else:
             print(bcolors.FAIL + "Snapper.screen error during the screen acquisition" + bcolors.ENDC)
     except Exception as e:
@@ -35,7 +35,6 @@ if __name__ == '__main__':
                     break
                 else:
                     print(bcolors.FAIL + "\nUnknown input" + bcolors.ENDC)
-
         except Exception as e:
                     print(bcolors.FAIL + "\nUnknown input" + bcolors.ENDC)
                     print(e)

@@ -37,6 +37,7 @@ def get_question(path):
 
     question = apply_pytesseract(cropped_img)
     question = question.splitlines()
+    question = [x for x in question if x != '']
     linenumber = len(question)
     print("lines in the question: " + str(linenumber))
 

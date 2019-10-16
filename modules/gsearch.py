@@ -11,7 +11,7 @@ import io
 import urllib.request as urllib2
 import urllib.parse as urllib
 from bs4 import BeautifulSoup
-from google import google
+import googlesearch
 import re
 import modules.mydecorators as mydecorators
 import sys
@@ -212,7 +212,7 @@ def search(searched_option):
     # searched_option += ' wiki'
     # get google search results for option + 'wiki'
     try:
-        ret = google.search(searched_option, pages=1, lang="it")
+        ret = googlesearch.search(searched_option, num=10, lang="it", tld='it')
     except Exception as e:
         print(e)        
          
@@ -221,6 +221,7 @@ def search(searched_option):
 
 def get_score(link, words, sim_ques):
     points = 0
+    # TO DO filter the wiki page
     content = get_page(link)
     soup = BeautifulSoup(content, "lxml")
     page = soup.get_text().lower()
@@ -258,18 +259,19 @@ def google_wiki(sim_ques, option, neg):
     
     search_w = None
     search_wiki = search(searched_option)
-    #print("searched: {}".format(searched_option))
-    #print(search_wiki)
+
     for sw in search_wiki:
-        if sw.link:
-            search_w = sw
-            break
+        search_w = sw
+        print(search_w)
+        break
 
     if not search_w:
         # maxint was removed
         # not so clear
+        print("searched: {}".format(searched_option))
+        print(search_wiki)
         return -sys.maxsize if not neg else sys.maxsize
 
-    points = get_score(search_w.link, words, sim_ques)
+    points = get_score(search_w, words, sim_ques)
 
     return points if not neg else -points

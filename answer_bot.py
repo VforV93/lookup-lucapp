@@ -44,7 +44,7 @@ def solve_quiz(snapper):
     """Given a path to a valid screenshot it tries to solve the quiz in parallel."""
     question, lineno = get_question(snapper.screenpath())
     #simpler_question is an object of type ParsedQuestion
-    simpler_question, negative_question = simplify_ques_fy(question)
+    simpler_question, negative_question = simplify_ques(question)
 
     # if the answer is negative the results are resversed we check for that one with less matches
     points_coeff = 1
@@ -85,7 +85,7 @@ def solve_quiz(snapper):
 
 # Debugging
 if __name__ == '__main__':
-    question, lineno = "In quale di queste serie TV ha recitato Will Smith:", 3
+    question, lineno = "In quale di queste serie TV ha recitato Will Smith", 3
     option = ["The Crown","Lost","Willy, il principe di Bel-Air"]
     #question, lineno = "Indica il film in cui il protagonista appare con uno stuzzicadenti", 3
     #option = ["Scusa ma ti chiamo amore","Quo vado?","Johnny Stecchino"]
@@ -95,12 +95,7 @@ if __name__ == '__main__':
     #option = ["Blackboard","Google Scholar","Google Classroom"]
     #question, lineno = "Qual è la corsa ciclistica più lunga tra queste", 3
     #option = ["Tour de France","Cape Town Cycle Tour","Giro d'Italia"]
-    snapper = em.getSnapperFactory('1')
-    #question, lineno = get_question(snapper.screenpath())
-    simpler_question, negative_question = simplify_ques_fy(question)
-    #simpler_question, negative_question = simplify_ques(question)
-    #option = ["United Internet","Burmeister & Wain","Mannesmann"]
-    print(simpler_question)
+    simpler_question, negative_question = simplify_ques(question)
 
     points_coeff = 1
     if negative_question:
@@ -108,27 +103,16 @@ if __name__ == '__main__':
 
     manager = Manager()
     return_dict = manager.dict()
+    points = []
 
-    tasks = []
-    for i in [0, 1, 2]:
-        if option == '':
-            points = 0
-        else:
-            points = google_wiki(simpler_question, option[i], negative_question)
-
-        return_dict[option[i]] = points * points_coeff
-
-    points = return_dict.values()
+    for i in [1, 2, 3]:
+        pts = google_wiki(simpler_question, option[i-1], negative_question)
+        points.append(pts*points_coeff)
+    
     max_point = max(points)
     print("\n" + bcolors.UNDERLINE + question + bcolors.ENDC + "\n")
-    return_option = ""
-    #for point, option in zip(points, return_dict.keys()):
-    for opt in option:
-        if max_point == return_dict[opt]:
-            return_option = opt
-            # if this is the "correct" answer it will appear green
-            opt = bcolors.OKGREEN + opt + bcolors.ENDC
-
-        print(option + " { points: " + bcolors.BOLD + str(return_dict[opt]) + bcolors.ENDC + " }\n")
+    r_opt = ''
+    for i, r_p in enumerate(points):
+        print(option[i] + " { points: " + str(r_p) + " }\n")
 
     print("---------------------------------------")
