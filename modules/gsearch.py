@@ -17,6 +17,7 @@ import modules.mydecorators as mydecorators
 import sys
 import gzip
 import os
+import time
 
 # list of words to clean from the question during google search
 remove_words   = json.loads(open("Data/settings.json").read())["remove_words"]
@@ -26,6 +27,9 @@ negative_words = json.loads(open("Data/settings.json").read())["negative_words"]
 
 # negative words
 no_end_char    = r'[!@#$?:,;]'
+
+# wikipedia url
+wiki_url       = r'(https:\/\/|http:\/\/)([a-z]*.wikipedia.org)'
 
 class ParsedQuestion:
     """Holding some elements extracted from the question"""
@@ -43,7 +47,7 @@ class ParsedQuestion:
 def simplify_ques(question):
     """Simplify question and remove the words in the setting.json"""
 
-    question = question.strip('?')
+    question = re.sub(no_end_char, '', question)
     splitted_question = question.split()
     # this line should remove the first words like 'Quale' 'Chi' 'In'
     splitted_question = splitted_question[1:] if splitted_question[0].lower() in remove_words else splitted_question
@@ -236,11 +240,13 @@ def get_score(link, words, sim_ques):
 
 @mydecorators.handle_exceptions
 @mydecorators.timeit("googlesearch")
-def google_wiki(sim_ques, option, neg):
+def google_wiki(sim_ques, option, neg, tmax=6):
+
     """Searches the question and the single option on google and wikipedia.
 
     sim_ques must be a ParsedQuestion object.
     """
+    ts = time.time()
     print("Searching ..." + sim_ques.original + "?  " + option)
 
     # removing the first word like 'Il' 'Una'
@@ -258,12 +264,17 @@ def google_wiki(sim_ques, option, neg):
     searched_option = option.lower()
     
     search_w = None
-    search_wiki = search(searched_option)
+    search_wiki = search(searched_option) # generator
 
     for sw in search_wiki:
-        search_w = sw
-        print(search_w)
-        break
+        # scan for wikipedia url
+        if re.match(wiki_url, sw):
+            search_w = sw
+            print(search_w)
+            break
+        elif (time.time()-ts) > tmax:
+            print("No Link Found")
+            break
 
     if not search_w:
         # maxint was removed

@@ -85,8 +85,8 @@ def solve_quiz(snapper):
 
 # Debugging
 if __name__ == '__main__':
-    question, lineno = "In quale di queste serie TV ha recitato Will Smith", 3
-    option = ["The Crown","Lost","Willy, il principe di Bel-Air"]
+    #question, lineno = "In quale di queste serie TV ha recitato Will Smith", 3
+    #option = ["The Crown","Lost","Willy, il principe di Bel-Air"]
     #question, lineno = "Indica il film in cui il protagonista appare con uno stuzzicadenti", 3
     #option = ["Scusa ma ti chiamo amore","Quo vado?","Johnny Stecchino"]
     #question, lineno = "Dove ha avuto origine la cerimonia del tè", 3
@@ -95,6 +95,11 @@ if __name__ == '__main__':
     #option = ["Blackboard","Google Scholar","Google Classroom"]
     #question, lineno = "Qual è la corsa ciclistica più lunga tra queste", 3
     #option = ["Tour de France","Cape Town Cycle Tour","Giro d'Italia"]
+    option = []
+    question, lineno = get_question("Screens/screen.png")
+    for i in range(3):
+        get_option("Screens/screen.png", lineno, i+1)
+        option.append(apply_pytesseract(get_option("Screens/screen.png", lineno, i+1)))
     simpler_question, negative_question = simplify_ques(question)
 
     points_coeff = 1
@@ -110,7 +115,7 @@ if __name__ == '__main__':
         points.append(pts*points_coeff)
     
     max_point = max(points)
-    print("\n" + bcolors.UNDERLINE + question + bcolors.ENDC + "\n")
+    print("\n" + question + "\n")
     r_opt = ''
     for i, r_p in enumerate(points):
         print(option[i] + " { points: " + str(r_p) + " }\n")
