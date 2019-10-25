@@ -20,9 +20,8 @@ def show_img(title, img):
     cv2.destroyAllWindows()
 
 
-def get_question(path):
+def get_question(image):
     """Reading the question and guessing the line number."""
-    image = cv2.imread(path)
     height, width = image.shape[:2]
 
     # The problem of this huge portion of code is that the question hasn't always the same lenght
@@ -32,7 +31,6 @@ def get_question(path):
     end_row, end_col = int(height * 38 / 100), int(width)
 
     cropped_img = image[start_row:end_row, start_col:end_col]
-    # show_img("question", cropped_img)
     cv2.imwrite("Screens/question.png", cropped_img)
 
     question = apply_pytesseract(cropped_img)
@@ -45,7 +43,7 @@ def get_question(path):
     return " ".join(question), linenumber
 
 
-def get_option(path, lineno, index):
+def get_option(image, lineno, index):
     """" Crops the image to get the interesting portion (that one with an option).
 
     The image cutting depends on the line number (lineno) of the question.
@@ -57,7 +55,6 @@ def get_option(path, lineno, index):
     crop_config = [42 / 100, 44 / 100, 46 / 100]
     end_q = crop_config[lineno - 1] + (index - 1)*9/100
 
-    image = cv2.imread(path)
     height, width = image.shape[:2]
 
     start_row, start_col = int(height * end_q), int(width * 0.05)

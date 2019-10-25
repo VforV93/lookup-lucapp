@@ -1,4 +1,6 @@
 import os
+from PIL import Image
+from io import BytesIO
 from datetime import date
 import PIL.ImageGrab
 import operator
@@ -6,7 +8,10 @@ import Data.coords as crds
 import json
 import win32.win32api as win32
 import re
-
+from modules.adbmirror.adb import *
+import cv2
+import numpy as np
+import modules.mydecorators as mydecorators
 # Globals
 # ------------------------------
 x_pad = 1
@@ -38,6 +43,7 @@ class Snapper(object):
         self._imgpath  = "Screens/"
         self._backpath = "Backup/"
         self._imgname  = "screen.png"
+        self._image    = None
 
     """
         take the current Screen imgs and move them to Screens/Backup/<day>/quest# - autoincrement
@@ -79,7 +85,7 @@ class Snapper(object):
                     os.replace(root + f, newfolderpath + os.sep + f)
             break
 
-    def screen(self):
+    def screen(self, *args, **kwargs):
         raise NotImplementedError
     
     def screenpath(self):
@@ -89,17 +95,20 @@ class ADBSnapper(Snapper):
     def __init__(self):
         super().__init__()
 
-    def screen(self):
+    @mydecorators.timeit("ADBSnapper.screen")
+    def screen(self, *args, **kwargs):
         #return 1
-        return os.system("adb exec-out screencap -p > " + self._imgpath + self._imgname)
-        
+        #return os.system("adb exec-out screencap -p > " + self._imgpath + self._imgname)
+        data = run_adb('exec-out screencap -p', out_file="{}{}".format(self._imgpath,self._imgname), *args, **kwargs)
+        self._image = cv2.imdecode(np.frombuffer(data, np.uint8), -1)
+        return 1
 
 class EmulatorSnapper(Snapper):
     def __init__(self):
         super().__init__()
         self.__crds = crds.Cord()
 
-    def screen(self):
+    def screen(self, *args, **kwargs):
         box_hp = tuple(map(operator.add, (x_pad,y_pad,x_pad,y_pad), self.__crds.homepage))
         im  = PIL.ImageGrab.grab(box_hp)
         im.save(os.getcwd() + '\\' + self._imgpath + self._imgname, 'PNG')
