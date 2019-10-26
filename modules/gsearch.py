@@ -3,22 +3,23 @@
 
 The module searches the question and one option; it then tries to count the number of matches.
 """
-
-import json
-import io
+from multiprocessing import Process, Manager
+import modules.mydecorators as mydecorators
+from babelpy.babelfy import BabelfyClient
 import urllib.request as urllib2
 import urllib.parse as urllib
 from bs4 import BeautifulSoup
-import googlesearch
-import re
-import modules.mydecorators as mydecorators
-import gzip
-import os
-import time
-from babelpy.babelfy import BabelfyClient
-import requests
 import multiprocessing
-from multiprocessing import Process, Manager, sharedctypes
+import wikipedia as wk
+import googlesearch
+import requests
+import gzip
+import json
+import time
+import io
+import re
+import os
+
 
 # list of words to clean from the question during google search
 remove_words   = json.loads(io.open("Data/settings.json", encoding="utf-8").read())["remove_words"]
@@ -35,6 +36,13 @@ wiki_url       = r'(https:\/\/|http:\/\/)([a-z]*.wikipedia.org)'
 # No Score
 NO_SCORE       = 969696 
 
+params = {
+    'lang' : 'IT',
+    'th'   : '.0',
+    'match': 'PARTIAL_MATCHING'
+    }
+babel_client = BabelfyClient(os.environ['BABEL'], params)
+    
 class ParsedQuestion:
     """Holding some elements extracted from the question"""
     def __init__(self, originalq, proper_nouns, simplyfiedq):
@@ -247,19 +255,13 @@ def simplify_ques_fy(question):
 
     return ParsedQuestion(question, senses, simplfy_ques), neg
 
+@mydecorators.timeit("simplify_ques_fy2")
 def simplify_ques_fy2(question):
     
-    params = {
-    'lang' : 'IT',
-    'th'   : '.0',
-    'match': 'PARTIAL_MATCHING'
-    }
     simpl_ques = list()
     senses = list()
     check_synset = list()
     neg = False
-
-    babel_client = BabelfyClient(os.environ['BABEL'], params)
 
     # check if the question is a negative one
     splitted_question = question.split()
@@ -324,7 +326,6 @@ def get_page(link):
 
 #@mydecorators.timeit("actualsearch")
 def search(searched_option):
-    # searched_option += ' wiki'
     # get google search results for option + 'wiki'
     try:
         ret = googlesearch.search(searched_option, num=10, lang="it", tld='it')
@@ -333,28 +334,27 @@ def search(searched_option):
          
     return ret
 
-def get_score(link, words, sim_ques):
+def get_score(text, words, sim_ques):
     points = 0
-    # TO DO filter the wiki page
-    content = get_page(link)
-    soup = BeautifulSoup(content, "lxml").text
-    page = soup.lower()
+    # content = get_page(link)
+    # soup = BeautifulSoup(content, "lxml").text
+    # page = soup.lower()
 
     for word in words:
-        points = points + page.count(word.lower())
+        points = points + text.count(word.lower())
     for pn in sim_ques.proper_nouns:
-        points = points + page.count(pn.lower()) * 5
+        points = points + text.count(pn.lower()) * 5
 
     return points
 
 def google_results_number(i, sim_ques, option, ret_arr):
-    re_val = r'[a-zA-Z ]+(\d+|\d+.\d+)[ a-zA-Z]+'
-    query = " ".join(sim_ques.original.split() + option.split())
+    re_val = r'[a-zA-Z ]+(\d+|\d+.\d+|\d+.\d+.\d+)[ a-zA-Z]+'
+    query = "{} {}".format(" ".join(sim_ques.simplyfied), option)
     par={'q': query}
     par_url = urllib.urlencode(par)
 
-    USER_AGENT = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36'}
-    req = requests.get('https://www.google.com/search?{}'.format(par_url), headers=USER_AGENT)
+    USER_AGENT = {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36'}
+    req = requests.get('https://www.google.it/search?{}'.format(par_url), headers=USER_AGENT)
     soup = BeautifulSoup(req.text, 'lxml')
     response = soup.find('div', {'id': 'resultStats'})
     if response:
@@ -384,32 +384,24 @@ def google_from_options(h, sim_ques, option, tmax, return_dict):
     searched_option = option.lower()
     
     search_w = None
-    search_wiki = search(searched_option) # generator
-
-    for sw in search_wiki:
-        # scan for wikipedia url
-        if re.match(wiki_url, sw):
-            search_w = sw
-            break
-        elif (time.time()-ts) > tmax:
-            print("No Link Found")
-            break
-
-    if not search_w:
-        # maxint was removed
-        # not so clear
+    #search_wiki = search(searched_option) # generator
+    wk.set_lang('it')
+    # search_wiki = wk.search("{} {}".format(" ".join(sim_ques.simplyfied), searched_option))
+    search_wiki = wk.search(searched_option)
+    if not search_wiki:
         print("searched: {}".format(searched_option))
         return_dict[h] = -NO_SCORE
-    else:
-        points = get_score(search_w, words, sim_ques)
-        return_dict[h] = points
-        #return points if not neg else -points
+        return return_dict[h]
+    
+    pag = wk.page(search_wiki[0])
+    points = get_score(pag.content, words, sim_ques)
+    return_dict[h] = points
     
     return return_dict[h]
 
 @mydecorators.handle_exceptions
 @mydecorators.timeit("googlesearch")
-def google_wiki(sim_ques, option, neg, tmax=4):
+def google_wiki(sim_ques, option, neg, tmax=2):
 
     """Searches the question and the single option on google and wikipedia.
     sim_ques must be a ParsedQuestion object.
@@ -422,13 +414,13 @@ def google_wiki(sim_ques, option, neg, tmax=4):
     proc = Process(target=google_from_options, args=(0, sim_ques, option, tmax, ret_arr))
     proc.start()
     tasks.append(proc)
-    #google_from_options(0, sim_ques, option, ret_arr)
+    #google_from_options(0, sim_ques, option, tmax, ret_arr)
 
 
-    proc = Process(target=google_results_number, args=(1, sim_ques, option, ret_arr))
-    proc.start()
-    tasks.append(proc)
-    #google_results_number(1, sim_ques, option, ret_arr)
+    #proc = Process(target=google_results_number, args=(1, sim_ques, option, ret_arr))
+    #proc.start()
+    #tasks.append(proc)
+    google_results_number(1, sim_ques, option, ret_arr)
     
     for t in tasks:
         t.join()

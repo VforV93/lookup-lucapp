@@ -12,7 +12,7 @@ def main(ansbot: AnswerBot):
     try:
         if snapper.screen(clean=False, as_str=False) >= 0:
             ansbot.solve_quiz()
-            ansbot._snapper.store()
+            # ansbot._snapper.store()
             # TODO save the score/result to the questans.csv
         else:
             print(bcolors.FAIL + "Snapper.screen error during the screen acquisition" + bcolors.ENDC)

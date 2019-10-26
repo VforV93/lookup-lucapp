@@ -25,6 +25,7 @@ class bcolors:
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
 
+@mydecorators.timeit("get_and_search_option")
 def get_and_search_option(i, image, question, lineno, negative_question, return_dict):
     """Taking the screenshot and the parsed question this function read one option and search it.
 
@@ -37,8 +38,7 @@ def get_and_search_option(i, image, question, lineno, negative_question, return_
         points = 0
     else:
         points = google_wiki(question, option, negative_question)
-        #searcher.search(question, option, negative_question) #google_wiki(question, option, negative_question)
-    
+ 
     print("{}-{}-{}".format(option,i,tuple(points)))
     return_dict[option] = (option,i,tuple(points))
 
@@ -66,10 +66,10 @@ class AnswerBot(object):
         tasks = []
         for i in [1, 2, 3]:
             # searching in parallel
-            proc = Process(target=get_and_search_option, args=(i, self._snapper._image, simpler_question, lineno, negative_question, return_dict))
-            proc.start()
-            tasks.append(proc)
-            #get_and_search_option(i, self._snapper.screenpath(), simpler_question, lineno, negative_question, return_dict)
+            #proc = Process(target=get_and_search_option, args=(i, self._snapper._image, simpler_question, lineno, negative_question, return_dict))
+            #proc.start()
+            #tasks.append(proc)
+            get_and_search_option(i, self._snapper._image, simpler_question, lineno, negative_question, return_dict)
 
         for t in tasks:
             t.join()
@@ -77,22 +77,27 @@ class AnswerBot(object):
         ris_vals = sorted(return_dict.values(),key=itemgetter(1))
         
         points_wiki = [ris_vals[0][2][0],ris_vals[1][2][0],ris_vals[2][2][0]]
-        points = points_wiki.copy()
+        totwiki = 0
+        for i in range(3):
+            if points_wiki[i] > 0:
+                totwiki += points_wiki[i]
+
+        points = np.zeros(3, dtype=int)
 
         points_gres = [ris_vals[0][2][1],ris_vals[1][2][1],ris_vals[2][2][1]]
         totgres = 0
         for i in range(3):
             if points_gres[i] > 0:
                 totgres += points_gres[i]
-            if points[i] < 0:
-                points[i] = 0
 
         for i,p in enumerate(points_wiki):
+            pg = points_gres[i]
             if p >= 0:
-                if points_gres[i] > 0:
-                    points[i] += int(100*(points_gres[i]/totgres))
+                points[i] += int(100*(p/totwiki))
+            if pg > 0:
+                points[i] += int(100*(pg/totgres))
                 
-                points[i] *= points_coeff
+            points[i] *= points_coeff
         
         # taking the max match value
         max_point = max(points)

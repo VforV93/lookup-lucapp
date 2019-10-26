@@ -97,8 +97,9 @@ class ADBSnapper(Snapper):
 
     @mydecorators.timeit("ADBSnapper.screen")
     def screen(self, *args, **kwargs):
+        #self._image = cv2.imread(self.screenpath())
         #return 1
-        #return os.system("adb exec-out screencap -p > " + self._imgpath + self._imgname)
+        
         data = run_adb('exec-out screencap -p', out_file="{}{}".format(self._imgpath,self._imgname), *args, **kwargs)
         self._image = cv2.imdecode(np.frombuffer(data, np.uint8), -1)
         return 1
